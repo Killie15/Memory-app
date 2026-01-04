@@ -270,7 +270,36 @@ Current date/time: ${new Date().toLocaleString()}`;
             return 'I need to be configured with an API key to help you. Please check the setup.';
         }
 
-        const url = `${this.BASE_URL}/${this.MODEL}:generateContent?key=${apiKey}`;
+        // List of models to try in order of preference
+        const modelsToTry = [
+            { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest & newest stable
+            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested (might be restricted)
+            { id: 'gemini-1.5-flash', version: 'v1beta' }, // Standard stable
+            { id: 'gemini-1.5-pro', version: 'v1beta' }, // Higher intelligence
+            { id: 'gemini-pro', version: 'v1beta' } // Legacy fallback
+        ];
+
+        let lastError = null;
+
+        for (const model of modelsToTry) {
+            try {
+                console.log(`Trying AI model: ${model.id} (${model.version})...`);
+                const text = await this.tryModel(apiKey, model.id, model.version, contents);
+                if (text) return text;
+            } catch (error) {
+                console.warn(`Model ${model.id} failed:`, error);
+                lastError = error;
+                // Continue to next model
+            }
+        }
+
+        console.error('All AI models failed. Last error:', lastError);
+        return 'I am currently unable to connect to my AI brain. Please try again later or check the API configuration.';
+    },
+
+    async tryModel(apiKey, modelId, version, contents) {
+        const baseUrl = `https://generativelanguage.googleapis.com/${version}/models`;
+        const url = `${baseUrl}/${modelId}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -288,14 +317,12 @@ Current date/time: ${new Date().toLocaleString()}`;
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Gemini API error:', data);
-            throw new Error(data.error?.message || 'API request failed');
+            throw new Error(data.error?.message || `API error: ${response.status}`);
         }
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) {
-            console.error('No text in response:', data);
-            return 'I received an empty response. Please try again.';
+            throw new Error('Empty response from model');
         }
         return text;
     },

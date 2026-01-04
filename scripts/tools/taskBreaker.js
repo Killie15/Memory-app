@@ -50,22 +50,77 @@ const TaskBreaker = {
             stepsDiv.innerHTML = `
                 <div class="timeline-loading">
                     <div class="loading-spinner">🤖</div>
-                    <p>AI is analyzing your task and creating a timeline...</p>
+                    <p>Creating your timeline...</p>
                 </div>
             `;
         }
 
         try {
+            const apiKey = this.API_KEY();
+            if (!apiKey) {
+                console.warn('No API key, using fallback');
+                throw new Error('No API key');
+            }
             const result = await this.generateAITimeline(this.currentTask);
             this.currentSteps = result.steps;
             this.timeScale = result.timeScale;
             this.displayTimeline(result);
         } catch (error) {
-            console.error('AI breakdown error:', error);
-            this.showToast('AI unavailable - try again');
-            if (stepsDiv) stepsDiv.innerHTML = '<p>Could not generate timeline. Please try again.</p>';
+            console.error('AI error, using fallback:', error);
+            // Use fallback timeline
+            const result = this.generateFallbackTimeline(this.currentTask);
+            this.currentSteps = result.steps;
+            this.timeScale = result.timeScale;
+            this.displayTimeline(result);
         }
     },
+
+    generateFallbackTimeline(task) {
+        // Detect time scale based on keywords
+        const taskLower = task.toLowerCase();
+        let timeScale = 'hours';
+        let totalDuration = '2 hours';
+        let steps = [];
+
+        if (taskLower.includes('learn') || taskLower.includes('master') || taskLower.includes('fluent')) {
+            timeScale = 'months';
+            totalDuration = '6-12 months';
+            steps = [
+                { title: 'Research & Setup', duration: 'Week 1', description: 'Find the best resources, apps, and materials', milestone: 'Have a clear learning plan' },
+                { title: 'Build Foundation', duration: 'Month 1-2', description: 'Learn the basics and core concepts', milestone: 'Understand fundamentals' },
+                { title: 'Daily Practice', duration: 'Month 2-4', description: 'Practice consistently every day (15-30 min)', milestone: 'Build a habit' },
+                { title: 'Intermediate Skills', duration: 'Month 4-6', description: 'Tackle harder concepts and real-world application', milestone: 'Handle most situations' },
+                { title: 'Advanced Practice', duration: 'Month 6-9', description: 'Deepen knowledge with challenging material', milestone: 'Feel confident' },
+                { title: 'Mastery & Fluency', duration: 'Month 9-12', description: 'Refine skills and use in real contexts', milestone: 'Achieve your goal!' }
+            ];
+        } else if (taskLower.includes('clean') || taskLower.includes('room') || taskLower.includes('organize')) {
+            timeScale = 'hours';
+            totalDuration = '1-2 hours';
+            steps = [
+                { title: 'Quick Scan', duration: '5 min', description: 'Look around and identify the biggest messes', milestone: 'Know where to start' },
+                { title: 'Trash Run', duration: '10 min', description: 'Grab a bag and throw away all obvious trash', milestone: 'No more trash visible' },
+                { title: 'Surface Clear', duration: '15 min', description: 'Clear off desks, tables, and flat surfaces', milestone: 'Surfaces are clear' },
+                { title: 'Floor Pickup', duration: '10 min', description: 'Pick up everything from the floor', milestone: 'Floor is walkable' },
+                { title: 'Put Things Away', duration: '15 min', description: 'Return items to their proper places', milestone: 'Everything has a home' },
+                { title: 'Final Touch', duration: '10 min', description: 'Quick dust/wipe and final adjustments', milestone: 'Room looks great!' }
+            ];
+        } else {
+            // Generic project breakdown
+            timeScale = 'days';
+            totalDuration = '3-5 days';
+            steps = [
+                { title: 'Define the Goal', duration: '30 min', description: 'Write down exactly what you want to accomplish', milestone: 'Clear written goal' },
+                { title: 'Break It Down', duration: '30 min', description: 'List all the smaller parts of this task', milestone: 'Have a task list' },
+                { title: 'Gather Resources', duration: '1 hour', description: 'Get everything you need before starting', milestone: 'All materials ready' },
+                { title: 'First Small Win', duration: '1-2 hours', description: 'Complete the easiest part first', milestone: 'Momentum started' },
+                { title: 'Core Work', duration: '1-2 days', description: 'Work on the main parts in focused sessions', milestone: 'Most work done' },
+                { title: 'Review & Finish', duration: '1-2 hours', description: 'Check your work and complete final details', milestone: 'Task complete!' }
+            ];
+        }
+
+        return { timeScale, totalDuration, steps };
+    },
+
 
     async generateAITimeline(task) {
         const prompt = `You are an ADHD-friendly task planner. Analyze this task and create a visual timeline breakdown.

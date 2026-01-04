@@ -275,9 +275,7 @@ Current date/time: ${new Date().toLocaleString()}`;
         const modelsToTry = [
             { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested (Confirmed Working)
             { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest & newest stable
-            { id: 'gemini-1.5-flash', version: 'v1beta' }, // Standard stable
-            { id: 'gemini-1.5-pro', version: 'v1beta' }, // Higher intelligence
-            { id: 'gemini-pro', version: 'v1beta' } // Legacy fallback
+            { id: 'gemini-1.5-flash', version: 'v1beta' } // Standard stable
         ];
 
         let lastError = null;

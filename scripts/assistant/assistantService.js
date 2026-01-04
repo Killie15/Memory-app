@@ -280,19 +280,36 @@ Current date/time: ${new Date().toLocaleString()}`;
         ];
 
         let lastError = null;
+        let triedCount = 0;
 
         for (const model of modelsToTry) {
             try {
+                // Show toast only on retries/fallbacks so it's not spammy on first try
+                if (triedCount > 0 && window.App && App.showToast) {
+                    App.showToast(`Retry: Trying ${model.id}... 🤖`);
+                }
+
                 console.log(`Trying AI model: ${model.id} (${model.version})...`);
                 const text = await this.tryModel(apiKey, model.id, model.version, contents);
                 if (text) return text;
             } catch (error) {
                 console.warn(`Model ${model.id} failed:`, error);
+
+                // Show visible warning for each failure
+                if (window.App && App.showToast) {
+                    const status = error.message.includes('429') ? 'Quota exceeded' : 'Not found';
+                    App.showToast(`Model ${model.id} failed (${status}). switching... ⚠️`);
+                }
+
                 lastError = error;
+                triedCount++;
                 // Continue to next model
             }
         }
 
+        if (window.App && App.showToast) {
+            App.showToast('All AI connection attempts failed ❌');
+        }
         console.error('All AI models failed. Last error:', lastError);
         return 'I am currently unable to connect to my AI brain. Please try again later or check the API configuration.';
     },

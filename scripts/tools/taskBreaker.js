@@ -121,8 +121,10 @@ const TaskBreaker = {
         return { timeScale, totalDuration, steps };
     },
 
-
     async generateAITimeline(task) {
+        const apiKey = this.API_KEY();
+        if (!apiKey) throw new Error('No API Key');
+
         const prompt = `You are an ADHD-friendly task planner. Analyze this task and create a visual timeline breakdown.
 
 Task: "${task}"
@@ -150,29 +152,57 @@ Return ONLY valid JSON in this exact format:
     ]
 }`;
 
-        const response = await fetch(`${this.BASE_URL}/${this.MODEL}:generateContent?key=${this.API_KEY()}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 1000
+        // List of models to try in order of preference
+        const modelsToTry = [
+            { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest & newest stable
+            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested
+            { id: 'gemini-1.5-flash', version: 'v1beta' }, // Standard stable
+            { id: 'gemini-1.5-pro', version: 'v1beta' }, // Higher intelligence
+            { id: 'gemini-pro', version: 'v1beta' } // Legacy fallback
+        ];
+
+        let lastError = null;
+
+        for (const model of modelsToTry) {
+            try {
+                const baseUrl = `https://generativelanguage.googleapis.com/${model.version}/models`;
+                const url = `${baseUrl}/${model.id}:generateContent?key=${apiKey}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 1000
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Status ${response.status}`);
                 }
-            })
-        });
 
-        if (!response.ok) throw new Error('API request failed');
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-        // Parse JSON from response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
+                if (text) {
+                    // Parse JSON from response
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        return JSON.parse(jsonMatch[0]);
+                    }
+                }
+            } catch (error) {
+                console.warn(`TaskBreaker model ${model.id} failed:`, error);
+                lastError = error;
+                // Continue to next model
+            }
         }
-        throw new Error('Could not parse AI response');
+
+        console.error('All AI models failed, last error:', lastError);
+        throw new Error('All AI models failed');
     },
 
     displayTimeline(result) {
@@ -419,6 +449,7 @@ Return ONLY valid JSON in this exact format:
                 font-size: 0.85rem;
                 margin: 0 0 10px 0;
                 line-height: 1.5;
+                white-space: pre-wrap;
             }
             .step-milestone {
                 font-size: 0.8rem;

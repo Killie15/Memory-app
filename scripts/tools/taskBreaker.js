@@ -179,7 +179,13 @@ Return ONLY valid JSON in this exact format:
                         generationConfig: {
                             temperature: 0.7,
                             maxOutputTokens: 1000
-                        }
+                        },
+                        safetySettings: [
+                            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                        ]
                     })
                 });
 
@@ -188,7 +194,8 @@ Return ONLY valid JSON in this exact format:
                 }
 
                 const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                const candidate = data.candidates?.[0];
+                const text = candidate?.content?.parts?.[0]?.text;
 
                 if (text) {
                     // Parse JSON from response
@@ -196,6 +203,10 @@ Return ONLY valid JSON in this exact format:
                     if (jsonMatch) {
                         return JSON.parse(jsonMatch[0]);
                     }
+                } else {
+                    const reason = candidate?.finishReason || 'Unknown';
+                    console.warn(`Empty response (Finish Reason: ${reason})`);
+                    throw new Error(`Empty response (${reason})`);
                 }
             } catch (error) {
                 console.warn(`TaskBreaker model ${model.id} failed:`, error);

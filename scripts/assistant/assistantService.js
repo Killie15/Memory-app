@@ -272,10 +272,9 @@ Current date/time: ${new Date().toLocaleString()}`;
 
         // List of models to try in order of preference
         // List of models to try in order of preference
+        // List of models to try in order of preference
         const modelsToTry = [
-            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested (Confirmed Working)
-            { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest & newest stable
-            { id: 'gemini-1.5-flash', version: 'v1beta' } // Standard stable
+            { id: 'gemini-2.5-flash', version: 'v1beta' } // The only working model
         ];
 
         let lastError = null;

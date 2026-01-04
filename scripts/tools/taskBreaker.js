@@ -155,8 +155,8 @@ Return ONLY valid JSON in this exact format:
 
         // List of models to try in order of preference
         const modelsToTry = [
-            { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest & newest stable
-            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested
+            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested (Confirmed working)
+            { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest fallback
             { id: 'gemini-1.5-flash', version: 'v1beta' }, // Standard stable
             { id: 'gemini-1.5-pro', version: 'v1beta' }, // Higher intelligence
             { id: 'gemini-pro', version: 'v1beta' } // Legacy fallback
@@ -204,7 +204,12 @@ Return ONLY valid JSON in this exact format:
                 console.warn(`TaskBreaker model ${model.id} failed:`, error);
 
                 // Show visible warning for each failure
-                const status = error.message.includes('429') ? 'Quota exceeded' : 'Error';
+                let status = 'Error';
+                if (error.message.includes('429')) status = 'Quota Exceeded';
+                else if (error.message.includes('404')) status = 'Not Found (404)';
+                else if (error.message.includes('403')) status = 'Forbidden (403)';
+                else if (error.message.includes('400')) status = 'Bad Request (400)';
+
                 this.showToast(`Model ${model.id} failed (${status}). switching... ⚠️`);
 
                 lastError = error;

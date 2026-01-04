@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADHD Mastery | Memory + CBT Training</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+
+<body>
+    <!-- Scanline overlay -->
+    <div class="scanlines"></div>
+
+    <!-- ====== MAIN APP CONTAINER ====== -->
+    <div id="app-container">
+
+        <!-- ====== TAB: MEMORY PALACE ====== -->
+        <div id="tab-memory" class="tab-content active">
+
+            <!-- Memory Home -->
+            <div id="memory-home" class="sub-view active">
+                <div class="section-header">
+                    <h1>🏰 MEMORY PALACE</h1>
+                    <p class="section-subtitle">Train your memory with ancient techniques</p>
+                </div>
+
+                <div class="card-grid">
+                    <!-- Campaign Button -->
+                    <button class="action-card" id="btn-memory-campaign">
+                        <div class="card-icon">🎮</div>
+                        <div class="card-content">
+                            <span class="card-title">LEARN THE TECHNIQUE</span>
+                            <span class="card-subtitle">5 lessons to master Mind Palace</span>
+                        </div>
+                        <div class="card-badge" id="memory-campaign-progress">0/5</div>
+                    </button>
+
+                    <!-- Daily Challenge -->
+                    <div class="action-card" id="daily-challenge-card" style="cursor: default;">
+                        <div class="card-icon">⚡</div>
+                        <div class="card-content">
+                            <span class="card-title">DAILY CHALLENGE</span>
+                            <span class="card-subtitle">Train your working memory</span>
+                            <div class="challenge-controls" style="display: flex; gap: 5px; margin-top: 5px;">
+                                <select id="challenge-uidifficulty"
+                                    style="background: var(--bg-dark); color: var(--text-primary); border: 1px solid var(--neon-cyan); padding: 2px 5px; border-radius: 4px; font-size: 0.8rem;">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                                <button onclick="App.startDailyChallenge('words')" class="btn-sm"
+                                    style="background: var(--neon-purple); border: none; border-radius: 4px; color: white; cursor: pointer; padding: 2px 8px; font-size: 0.8rem;">Words</button>
+                                <button onclick="App.startDailyChallenge('numbers')" class="btn-sm"
+                                    style="background: var(--neon-pink); border: none; border-radius: 4px; color: white; cursor: pointer; padding: 2px 8px; font-size: 0.8rem;">Numbers</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Freeform Button -->
+                    <button class="action-card" id="btn-memory-freeform" disabled>
+                        <div class="card-icon">🏛️</div>
+                        <div class="card-content">
+                            <span class="card-title">FREEFORM MODE</span>
+                            <span class="card-subtitle">Create your own memories</span>
+                        </div>
+                        <div class="card-lock" id="freeform-lock">🔒</div>
+                    </button>
+
+                    <!-- Review Button -->
+                    <button class="action-card review-card" id="btn-memory-review">
+                        <div class="card-icon">🔄</div>
+                        <div class="card-content">
+                            <span class="card-title">REVIEW DUE</span>
+                            <span class="card-subtitle">Strengthen your memories</span>
+                        </div>
+                        <div class="card-badge urgent" id="memory-due-count">0</div>
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-total-memories">0</span>
+                        <span class="stat-label">Memories</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-mastered">0</span>
+                        <span class="stat-label">Mastered</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Memory Campaign View -->
+            <div id="memory-campaign" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-memory-home">← Back</button>
+                    <h2>🎮 MEMORY LESSONS</h2>
+                </div>
+                <div class="lesson-list" id="memory-lesson-list">
+                    <!-- Memory lessons rendered here -->
+                </div>
+            </div>
+
+            <!-- Memory Lesson View -->
+            <div id="memory-lesson" class="sub-view">
+                <div class="lesson-header">
+                    <button class="back-btn" id="btn-back-memory-campaign">← Back</button>
+                    <div class="lesson-progress-bar">
+                        <div class="lesson-progress-fill" id="memory-lesson-progress"></div>
+                    </div>
+                </div>
+                <div class="lesson-content" id="memory-lesson-content"></div>
+                <div class="lesson-actions">
+                    <button class="btn-primary" id="btn-memory-lesson-next">CONTINUE →</button>
+                </div>
+            </div>
+
+            <!-- Memory Palace View -->
+            <div id="memory-palace" class="sub-view">
+                <div class="palace-header">
+                    <button class="back-btn small" id="btn-back-memory-home-2">←</button>
+                    <h2 class="palace-title">🏰 YOUR PALACE</h2>
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" data-mode="place" id="btn-place">📍 PLACE</button>
+                        <button class="mode-btn" data-mode="review" id="btn-review">🔄 REVIEW</button>
+                    </div>
+                </div>
+                <div class="room-container" id="room-container">
+                    <div class="room" id="room">
+                        <div class="room-bg"></div>
+                        <!-- Loci rendered dynamically -->
+                        <div class="locus" id="locus-1" data-locus-id="1" data-name="Holographic Desk"
+                            style="left: 15%; top: 55%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">🖥️</div>
+                            <div class="locus-label">Holo Desk</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                        <div class="locus" id="locus-2" data-locus-id="2" data-name="Neon Couch"
+                            style="left: 40%; top: 65%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">🛋️</div>
+                            <div class="locus-label">Neon Couch</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                        <div class="locus" id="locus-3" data-locus-id="3" data-name="Arcade Cabinet"
+                            style="left: 70%; top: 50%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">🕹️</div>
+                            <div class="locus-label">Arcade</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                        <div class="locus" id="locus-4" data-locus-id="4" data-name="Bioluminescent Plant"
+                            style="left: 85%; top: 40%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">🌿</div>
+                            <div class="locus-label">Bio Plant</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                        <div class="locus" id="locus-5" data-locus-id="5" data-name="Cyber Bookshelf"
+                            style="left: 10%; top: 30%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">📚</div>
+                            <div class="locus-label">Bookshelf</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                        <div class="locus" id="locus-6" data-locus-id="6" data-name="Neon Window"
+                            style="left: 45%; top: 20%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">🌃</div>
+                            <div class="locus-label">Window</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                        <div class="locus" id="locus-7" data-locus-id="7" data-name="Hover Drone"
+                            style="left: 75%; top: 25%;">
+                            <div class="locus-glow"></div>
+                            <div class="locus-icon">🛸</div>
+                            <div class="locus-label">Drone</div>
+                            <div class="memory-indicator"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="instructions" id="instructions">
+                    <p id="instruction-text">Click on any object to place a memory</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== TAB: CBT TRAINING ====== -->
+        <div id="tab-cbt" class="tab-content">
+
+            <!-- CBT Home -->
+            <div id="cbt-home" class="sub-view active">
+                <div class="section-header">
+                    <h1>🧠 CBT TRAINING</h1>
+                    <p class="section-subtitle">Master your ADHD with cognitive techniques</p>
+                </div>
+
+                <!-- CBT Modules -->
+                <div class="module-list" id="cbt-module-list">
+
+                    <div class="module-card" data-module="psychoeducation">
+                        <div class="module-icon">📖</div>
+                        <div class="module-info">
+                            <h3>Understanding Your ADHD Brain</h3>
+                            <p>Learn how ADHD affects you • 2 sessions</p>
+                            <div class="module-progress-bar">
+                                <div class="module-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="module-status">0/4</div>
+                    </div>
+
+                    <div class="module-card locked" data-module="organization">
+                        <div class="module-icon">📋</div>
+                        <div class="module-info">
+                            <h3>Organization & Planning</h3>
+                            <p>Build systems that work • 2 sessions</p>
+                            <div class="module-progress-bar">
+                                <div class="module-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="module-status">🔒</div>
+                    </div>
+
+                    <div class="module-card locked" data-module="focus">
+                        <div class="module-icon">🎯</div>
+                        <div class="module-info">
+                            <h3>Reducing Distractibility</h3>
+                            <p>Master your focus • 2 sessions</p>
+                            <div class="module-progress-bar">
+                                <div class="module-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="module-status">🔒</div>
+                    </div>
+
+                    <div class="module-card locked" data-module="thinking">
+                        <div class="module-icon">💭</div>
+                        <div class="module-info">
+                            <h3>Adaptive Thinking</h3>
+                            <p>Challenge negative thoughts • 3 sessions</p>
+                            <div class="module-progress-bar">
+                                <div class="module-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="module-status">🔒</div>
+                    </div>
+
+                    <div class="module-card locked" data-module="procrastination">
+                        <div class="module-icon">⚡</div>
+                        <div class="module-info">
+                            <h3>Beating Procrastination</h3>
+                            <p>Get things done • 1 session</p>
+                            <div class="module-progress-bar">
+                                <div class="module-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="module-status">🔒</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CBT Lesson View -->
+            <div id="cbt-lesson" class="sub-view">
+                <div class="lesson-header">
+                    <button class="back-btn" id="btn-back-cbt-home">← Back</button>
+                    <div class="lesson-progress-bar">
+                        <div class="lesson-progress-fill" id="cbt-lesson-progress"></div>
+                    </div>
+                </div>
+                <div class="lesson-content" id="cbt-lesson-content"></div>
+                <div class="lesson-actions">
+                    <button class="btn-primary" id="btn-cbt-lesson-next">CONTINUE →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== TAB: TOOLS ====== -->
+        <div id="tab-tools" class="tab-content">
+
+            <!-- Tools Home -->
+            <div id="tools-home" class="sub-view active">
+                <div class="section-header">
+                    <h1>🛠️ ADHD TOOLS</h1>
+                    <p class="section-subtitle">Quick tools to manage your day</p>
+                </div>
+
+                <div class="tools-grid">
+                    <!-- Focus Timer -->
+                    <button class="tool-card" id="btn-tool-focus">
+                        <div class="tool-icon">⏱️</div>
+                        <h3>Focus Timer</h3>
+                        <p>Timed focus sessions with distraction log</p>
+                    </button>
+
+                    <!-- Thought Challenger -->
+                    <button class="tool-card" id="btn-tool-thoughts">
+                        <div class="tool-icon">🧠</div>
+                        <h3>Thought Challenger</h3>
+                        <p>Challenge negative thought patterns</p>
+                    </button>
+
+                    <!-- Task Breaker -->
+                    <button class="tool-card" id="btn-tool-tasks">
+                        <div class="tool-icon">✂️</div>
+                        <h3>Task Breaker</h3>
+                        <p>Break big tasks into tiny steps</p>
+                    </button>
+
+                    <!-- Habit Tracker -->
+                    <button class="tool-card" id="btn-tool-habit">
+                        <div class="tool-icon">📅</div>
+                        <h3>Habit Tracker</h3>
+                        <p>Build consistency daily</p>
+                    </button>
+
+                    <!-- Daily Check-in -->
+                    <button class="tool-card" id="btn-tool-checkin">
+                        <div class="tool-icon">📝</div>
+                        <h3>Daily Check-in</h3>
+                        <p>Set priorities & track mood</p>
+                    </button>
+
+                    <!-- Skill Cards -->
+                    <button class="tool-card" id="btn-tool-skills">
+                        <div class="tool-icon">🃏</div>
+                        <h3>Skill Cards</h3>
+                        <p>Quick reference for learned techniques</p>
+                    </button>
+
+                    <!-- Journal -->
+                    <button class="tool-card" id="btn-tool-journal">
+                        <div class="tool-icon">📓</div>
+                        <h3>Reflection Journal</h3>
+                        <p>Track your progress & insights</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Focus Timer View -->
+            <div id="tools-focus" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-focus">← Back</button>
+                    <h2>⏱️ FOCUS SESSION</h2>
+                </div>
+                <div class="focus-container">
+                    <div class="timer-display" id="timer-display">15:00</div>
+                    <div class="timer-controls">
+                        <button class="timer-btn" id="btn-timer-start">▶️ START</button>
+                        <button class="timer-btn" id="btn-timer-pause" style="display:none;">⏸️ PAUSE</button>
+                        <button class="timer-btn secondary" id="btn-timer-reset">🔄 RESET</button>
+                    </div>
+                    <div class="timer-settings">
+                        <label>Duration:</label>
+                        <select id="timer-duration">
+                            <option value="5">5 min</option>
+                            <option value="10">10 min</option>
+                            <option value="15" selected>15 min</option>
+                            <option value="25">25 min</option>
+                            <option value="45">45 min</option>
+                        </select>
+                    </div>
+                    <div class="distraction-log">
+                        <h4>Distraction Log</h4>
+                        <button class="btn-secondary" id="btn-log-distraction">+ Log Distraction</button>
+                        <ul id="distraction-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thought Challenger View -->
+            <div id="tools-thoughts" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-thoughts">← Back</button>
+                    <h2>🧠 THOUGHT CHALLENGER</h2>
+                </div>
+                <div class="thought-container">
+                    <div class="form-group">
+                        <label>What negative thought are you having?</label>
+                        <textarea id="thought-input" placeholder="e.g., I always forget everything..."></textarea>
+                    </div>
+                    <div class="thought-analysis" id="thought-analysis" style="display:none;">
+                        <div class="thought-trap">
+                            <span class="trap-icon">⚠️</span>
+                            <span class="trap-label">Detected Pattern:</span>
+                            <span class="trap-name" id="thought-trap-name">Overgeneralization</span>
+                        </div>
+                        <div class="challenge-questions">
+                            <h4>Challenge Questions:</h4>
+                            <ul id="challenge-questions-list">
+                                <li>Is this ALWAYS true?</li>
+                                <li>What evidence contradicts this?</li>
+                                <li>What would I tell a friend?</li>
+                            </ul>
+                        </div>
+                        <div class="form-group">
+                            <label>Alternative thought:</label>
+                            <textarea id="alternative-thought"
+                                placeholder="Write a more balanced thought..."></textarea>
+                        </div>
+                        <button class="btn-primary" id="btn-save-thought">💾 Save to Journal</button>
+                    </div>
+                    <button class="btn-primary" id="btn-analyze-thought">🔍 Analyze Thought</button>
+                </div>
+            </div>
+
+            <!-- Task Breaker View -->
+            <div id="tools-tasks" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-tasks">← Back</button>
+                    <h2>✂️ TASK BREAKER</h2>
+                </div>
+                <div class="task-container">
+                    <div class="form-group">
+                        <label>What big task feels overwhelming?</label>
+                        <input type="text" id="big-task-input" placeholder="e.g., Clean the apartment">
+                    </div>
+                    <button class="btn-primary" id="btn-break-task">✂️ Break It Down</button>
+                    <div class="micro-steps" id="micro-steps" style="display:none;">
+                        <h4>Micro-Steps (5 min each):</h4>
+                        <ul id="micro-steps-list"></ul>
+                        <div class="task-actions">
+                            <button class="btn-primary" id="btn-start-first-step">▶️ Start First Step</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Habit Tracker View -->
+            <div id="tools-habit" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-habit">← Back</button>
+                    <h2>📅 HABIT TRACKER</h2>
+                </div>
+                <div class="tool-container">
+                    <div class="form-group">
+                        <input type="text" id="new-habit-input" placeholder="New habit name...">
+                        <button class="btn-secondary" id="btn-add-habit" style="margin-top:10px; width:100%;">+ Add
+                            Habit</button>
+                    </div>
+                    <div id="habit-list" class="habit-list">
+                        <!-- Habits loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Check-in View -->
+            <div id="tools-checkin" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-checkin">← Back</button>
+                    <h2>📝 DAILY CHECK-IN</h2>
+                </div>
+                <div class="checkin-container">
+                    <div class="checkin-section">
+                        <h3>How are you feeling today?</h3>
+                        <div class="mood-options" id="mood-options">
+                            <button class="mood-btn" data-mood="1">😞</button>
+                            <button class="mood-btn" data-mood="2">😐</button>
+                            <button class="mood-btn" data-mood="3">🙂</button>
+                            <button class="mood-btn" data-mood="4">😊</button>
+                            <button class="mood-btn" data-mood="5">🤩</button>
+                        </div>
+                    </div>
+                    <div class="checkin-section">
+                        <h3>Today's Top 3 Priorities</h3>
+                        <div class="priority-list">
+                            <input type="text" class="priority-input" id="priority-1"
+                                placeholder="1. Most important...">
+                            <input type="text" class="priority-input" id="priority-2"
+                                placeholder="2. Second priority...">
+                            <input type="text" class="priority-input" id="priority-3"
+                                placeholder="3. If I have time...">
+                        </div>
+                    </div>
+                    <div class="checkin-section">
+                        <h3>Today's Focus Intention</h3>
+                        <textarea id="focus-intention"
+                            placeholder="What skill or habit will I practice today?"></textarea>
+                    </div>
+                    <button class="btn-primary" id="btn-save-checkin">✅ Save Check-in</button>
+                    <div class="checkin-history" id="checkin-history">
+                        <h4>Recent Check-ins</h4>
+                        <div id="checkin-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skill Cards View -->
+            <div id="tools-skills" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-skills">← Back</button>
+                    <h2>🃏 SKILL CARDS</h2>
+                </div>
+                <div class="skills-container">
+                    <p class="skills-intro">Skill cards are saved from CBT lessons. Complete lessons to unlock more
+                        cards!</p>
+                    <div class="skill-cards-grid" id="skill-cards-grid">
+                        <!-- Skill cards rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reflection Journal View -->
+            <div id="tools-journal" class="sub-view">
+                <div class="sub-header">
+                    <button class="back-btn" id="btn-back-tools-journal">← Back</button>
+                    <h2>📓 REFLECTION JOURNAL</h2>
+                </div>
+                <div class="journal-container">
+                    <div class="journal-entry-form">
+                        <div class="form-group">
+                            <label>What went well today?</label>
+                            <textarea id="journal-wins"
+                                placeholder="Celebrate your wins, no matter how small..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>What was challenging?</label>
+                            <textarea id="journal-challenges" placeholder="What obstacles did you face?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>What did you learn?</label>
+                            <textarea id="journal-learnings" placeholder="Any insights or realizations?"></textarea>
+                        </div>
+                        <button class="btn-primary" id="btn-save-journal">💾 Save Entry</button>
+                    </div>
+                    <div class="journal-history">
+                        <h4>Past Entries</h4>
+                        <div id="journal-entries-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== TAB: ASSISTANT ====== -->
+        <div id="tab-assistant" class="tab-content">
+            <div id="assistant-home" class="sub-view active">
+                <div class="section-header">
+                    <h1>🤖 AI ASSISTANT</h1>
+                    <p class="section-subtitle">Your ADHD-friendly personal helper</p>
+                </div>
+
+                <!-- Google Connection Status -->
+                <div class="assistant-status">
+                    <span id="google-status">Not connected to Google</span>
+                    <button class="btn-secondary" id="btn-google-signin" style="display: inline-block;">
+                        🔗 Connect Google
+                    </button>
+                    <button class="btn-secondary" id="btn-google-signout" style="display: none;">
+                        Disconnect
+                    </button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="quick-action-btn" id="btn-quick-calendar">📅 Today's Schedule</button>
+                    <button class="quick-action-btn" id="btn-quick-email">📧 Check Emails</button>
+                    <button class="quick-action-btn" id="btn-quick-focus">🎯 Focus Tips</button>
+                </div>
+
+                <!-- Chat Interface -->
+                <div class="assistant-chat">
+                    <div class="assistant-messages" id="assistant-messages">
+                        <div class="message message-assistant">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                Hi! I'm your ADHD assistant. I can help with:
+                                <br>• Checking your calendar
+                                <br>• Reading your emails
+                                <br>• Breaking down tasks
+                                <br>• Focus strategies
+                                <br><br>What do you need help with?
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="assistant-input-container">
+                        <input type="text" id="assistant-input" placeholder="Ask me anything..." autocomplete="off">
+                        <button class="btn-send" id="btn-send-message">➤</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== TAB: PROGRESS ====== -->
+        <div id="tab-progress" class="tab-content">
+            <div id="progress-home" class="sub-view active">
+                <div class="section-header">
+                    <h1>📊 YOUR PROGRESS</h1>
+                    <p class="section-subtitle">Track your growth</p>
+                </div>
+
+                <!-- XP & Level -->
+                <div class="progress-card level-card">
+                    <div class="level-info">
+                        <span class="level-badge" id="user-level">Level 1</span>
+                        <span class="level-title" id="user-title">Beginner</span>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" id="xp-fill" style="width: 0%"></div>
+                        <span class="xp-text" id="xp-text">0 / 200 XP</span>
+                    </div>
+                </div>
+
+                <!-- Daily Quests -->
+                <div class="progress-card">
+                    <h3>🎯 Daily Quests</h3>
+                    <div class="quest-list" id="quest-list">
+                        <!-- Quests rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Streaks -->
+                <div class="progress-card">
+                    <h3>🔥 Streaks</h3>
+                    <div class="streak-display">
+                        <div class="streak-number" id="streak-number">0</div>
+                        <div class="streak-label">Day Streak</div>
+                    </div>
+                    <div class="streak-calendar" id="streak-calendar">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Achievements -->
+                <div class="progress-card">
+                    <h3>🏆 Achievements</h3>
+                    <div class="achievements-grid" id="achievements-grid">
+                        <div class="achievement locked">
+                            <span class="achievement-icon">🎯</span>
+                            <span class="achievement-name">First Focus</span>
+                        </div>
+                        <div class="achievement locked">
+                            <span class="achievement-icon">🧠</span>
+                            <span class="achievement-name">Thought Detective</span>
+                        </div>
+                        <div class="achievement locked">
+                            <span class="achievement-icon">🔥</span>
+                            <span class="achievement-name">7-Day Streak</span>
+                        </div>
+                        <div class="achievement locked">
+                            <span class="achievement-icon">🏰</span>
+                            <span class="achievement-name">Palace Builder</span>
+                        </div>
+                        <div class="achievement locked">
+                            <span class="achievement-icon">🧠</span>
+                            <span class="achievement-name">Memory Athlete</span>
+                        </div>
+                        <div class="achievement locked">
+                            <span class="achievement-icon">🎓</span>
+                            <span class="achievement-name">CBT Graduate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Entry Button -->
+                <div class="action-card" id="btn-open-settings"
+                    style="margin-top: var(--space-md); margin-bottom: var(--space-xl);">
+                    <div class="card-icon">⚙️</div>
+                    <div class="card-content">
+                        <div class="card-title">Settings</div>
+                        <div class="card-subtitle">Manage data and preferences</div>
+                    </div>
+                    <div class="card-arrow">→</div>
+                </div>
+            </div>
+
+            <!-- Settings View (Hidden by default) -->
+            <div id="view-settings" class="sub-view">
+                <div class="header-left">
+                    <button class="back-btn" id="btn-back-settings">← Back</button>
+                    <h2>Settings</h2>
+                </div>
+
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>Appearance</h3>
+                        <div class="theme-selector"
+                            style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                            <button class="settings-btn" onclick="ThemeSwitcher.setTheme('cyberpunk')">🌃
+                                Cyberpunk</button>
+                            <button class="settings-btn" onclick="ThemeSwitcher.setTheme('vaporwave')">👾
+                                Vaporwave</button>
+                            <button class="settings-btn" onclick="ThemeSwitcher.setTheme('zen')">🍃 Zen</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+                        <p class="warning-text">⚠️ This cannot be undone.</p>
+                        <button class="btn-danger" id="btn-factory-reset">Factory Reset (Clear All Data)</button>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>About</h3>
+                        <p>ADHD Mastery App v0.5</p>
+                        <p>Designed for the ADHD brain.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== BOTTOM NAVIGATION ====== -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-tab="memory">
+            <span class="nav-icon">🏰</span>
+            <span class="nav-label">Memory</span>
+        </button>
+        <button class="nav-btn" data-tab="cbt">
+            <span class="nav-icon">🧠</span>
+            <span class="nav-label">CBT</span>
+        </button>
+        <button class="nav-btn" data-tab="tools">
+            <span class="nav-icon">🛠️</span>
+            <span class="nav-label">Tools</span>
+        </button>
+        <button class="nav-btn" data-tab="assistant">
+            <span class="nav-icon">🤖</span>
+            <span class="nav-label">Assistant</span>
+        </button>
+        <button class="nav-btn" data-tab="progress">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Progress</span>
+        </button>
+    </nav>
+    </div>
+
+    <!-- ====== MODALS ====== -->
+
+    <!-- Memory Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Place Memory</h2>
+                <button class="modal-close" id="modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Place Mode Form -->
+                <div id="place-form" class="modal-form">
+                    <div class="form-group">
+                        <label>📍 Location</label>
+                        <div class="location-display" id="location-display">Holographic Desk</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="memory-content">💡 What do you want to remember?</label>
+                        <input type="text" id="memory-content" placeholder="e.g., Capital of Japan = Tokyo"
+                            autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="memory-mnemonic">🎨 Your Mnemonic (Make it weird!)</label>
+                        <textarea id="memory-mnemonic" placeholder="e.g., A giant TOE is KICKING YOur desk (Tokyo)"
+                            rows="3"></textarea>
+                    </div>
+                    <button class="btn-primary" id="btn-save-memory">
+                        <span class="btn-icon">💾</span> IMPRINT MEMORY
+                    </button>
+                </div>
+
+                <!-- Review Mode Display -->
+                <div id="review-form" class="modal-form" style="display: none;">
+                    <div class="form-group">
+                        <label>📍 Location</label>
+                        <div class="location-display" id="review-location">Holographic Desk</div>
+                    </div>
+                    <div class="review-prompt">
+                        <p class="prompt-label">What memory is stored here?</p>
+                        <div class="ghost-hint" id="ghost-hint">
+                            <span class="ghost-icon">👻</span>
+                            <span class="ghost-text" id="ghost-text">Think about your mnemonic...</span>
+                        </div>
+                    </div>
+                    <button class="btn-reveal" id="btn-reveal">
+                        <span class="btn-icon">👁️</span> REVEAL MEMORY
+                    </button>
+                    <div class="revealed-content" id="revealed-content" style="display: none;">
+                        <div class="memory-display">
+                            <div class="memory-fact" id="review-fact"></div>
+                            <div class="memory-mnemonic" id="review-mnemonic"></div>
+                        </div>
+                        <div class="rating-section">
+                            <p class="rating-label">How well did you remember?</p>
+                            <div class="rating-buttons">
+                                <button class="rating-btn hard" data-rating="hard">😰 HARD</button>
+                                <button class="rating-btn medium" data-rating="medium">🤔 MEDIUM</button>
+                                <button class="rating-btn easy" data-rating="easy">😎 EASY</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">✓</span>
+        <span class="toast-message" id="toast-message">Saved!</span>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Config with API keys (not in Git - copy from config.example.js) -->
+    <script src="scripts/config.js"></script>
+    <script src="scripts/srs.js"></script>
+    <script src="scripts/memory.js"></script>
+    <script src="scripts/palace.js"></script>
+    <script src="scripts/campaign.js"></script>
+    <script src="scripts/cbt/cbtCampaign.js"></script>
+    <script src="scripts/tools/focusTimer.js"></script>
+    <script src="scripts/tools/thoughtChallenger.js"></script>
+    <script src="scripts/tools/taskBreaker.js"></script>
+    <script src="scripts/tools/habitTracker.js"></script>
+    <script src="scripts/shared/notifications.js"></script>
+    <script src="scripts/shared/audioManager.js"></script>
+    <script src="scripts/shared/themeSwitcher.js"></script>
+    <script src="scripts/memory/dailyChallenge.js"></script>
+    <script src="scripts/gamification/xpSystem.js"></script>
+    <!-- Database -->
+    <script src="scripts/database/supabaseClient.js"></script>
+    <script src="scripts/database/memoryStore.js"></script>
+    <script src="scripts/database/taskStore.js"></script>
+    <script src="scripts/database/journalStore.js"></script>
+    <!-- Google & AI Integrations -->
+    <script src="scripts/integrations/googleAuth.js"></script>
+    <script src="scripts/integrations/calendarService.js"></script>
+    <script src="scripts/integrations/gmailService.js"></script>
+    <script src="scripts/assistant/assistantService.js"></script>
+    <script src="scripts/app.js"></script>
+</body>
+
+</html>

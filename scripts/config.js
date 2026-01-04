@@ -6,7 +6,7 @@
 const CONFIG = {
     // Gemini AI
     GEMINI_API_KEY: 'AIzaSyAC05Uj2GkRt1IsKWIvS-u_8tMDlG8hfI4',
-    GEMINI_MODEL: 'gemini-1.5-flash',
+    GEMINI_MODEL: 'gemini-1.5-flash-001',
 
     // Supabase
     SUPABASE_URL: 'https://moxfaxmnghqyujcxbvzt.supabase.co',

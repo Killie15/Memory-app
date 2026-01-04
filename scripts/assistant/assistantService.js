@@ -271,9 +271,10 @@ Current date/time: ${new Date().toLocaleString()}`;
         }
 
         // List of models to try in order of preference
+        // List of models to try in order of preference
         const modelsToTry = [
+            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested (Confirmed Working)
             { id: 'gemini-1.5-flash-8b', version: 'v1beta' }, // Fastest & newest stable
-            { id: 'gemini-2.5-flash', version: 'v1beta' }, // User requested (might be restricted)
             { id: 'gemini-1.5-flash', version: 'v1beta' }, // Standard stable
             { id: 'gemini-1.5-pro', version: 'v1beta' }, // Higher intelligence
             { id: 'gemini-pro', version: 'v1beta' } // Legacy fallback
@@ -297,7 +298,12 @@ Current date/time: ${new Date().toLocaleString()}`;
 
                 // Show visible warning for each failure
                 if (window.App && App.showToast) {
-                    const status = error.message.includes('429') ? 'Quota exceeded' : 'Not found';
+                    let status = 'Error';
+                    if (error.message.includes('429')) status = 'Quota Exceeded';
+                    else if (error.message.includes('404')) status = 'Not Found (404)';
+                    else if (error.message.includes('403')) status = 'Forbidden (403)';
+                    else if (error.message.includes('400')) status = 'Bad Request (400)';
+
                     App.showToast(`Model ${model.id} failed (${status}). switching... ⚠️`);
                 }
 
@@ -311,7 +317,8 @@ Current date/time: ${new Date().toLocaleString()}`;
             App.showToast('All AI connection attempts failed ❌');
         }
         console.error('All AI models failed. Last error:', lastError);
-        return 'I am currently unable to connect to my AI brain. Please try again later or check the API configuration.';
+        const debugInfo = lastError ? `(Debug: ${lastError.message})` : '(No specific error)';
+        return `I am currently unable to connect to my AI brain. Please try again later or check the API configuration.\n\n${debugInfo}`;
     },
 
     async tryModel(apiKey, modelId, version, contents) {

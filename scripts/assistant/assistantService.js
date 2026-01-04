@@ -331,7 +331,13 @@ Current date/time: ${new Date().toLocaleString()}`;
                     temperature: 0.7,
                     maxOutputTokens: 1024,
                     topP: 0.9
-                }
+                },
+                safetySettings: [
+                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                ]
             })
         });
 
@@ -341,9 +347,12 @@ Current date/time: ${new Date().toLocaleString()}`;
             throw new Error(data.error?.message || `API error: ${response.status}`);
         }
 
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const candidate = data.candidates?.[0];
+        const text = candidate?.content?.parts?.[0]?.text;
+
         if (!text) {
-            throw new Error('Empty response from model');
+            const reason = candidate?.finishReason || 'Unknown';
+            throw new Error(`Empty response (Finish Reason: ${reason})`);
         }
         return text;
     },

@@ -1,47 +1,15 @@
 /**
- * Task Breaker Tool
- * Breaks overwhelming tasks into micro-steps
+ * Task Breaker Tool - AI Powered
+ * Uses Gemini AI to break down overwhelming tasks into micro-steps
  */
 
 const TaskBreaker = {
-    // Common task templates for quick breakdown
-    templates: {
-        'clean': [
-            'Pick up 5 items from floor',
-            'Put dishes in sink',
-            'Wipe one surface',
-            'Take out trash',
-            'Straighten one area'
-        ],
-        'email': [
-            'Open email app',
-            'Read first email',
-            'Decide: Reply, Delete, or Archive',
-            'Handle next email',
-            'Repeat until inbox zero (or 10 min)'
-        ],
-        'write': [
-            'Open document',
-            'Write one sentence',
-            'Write intro paragraph',
-            'Outline main points',
-            'Write each section (15 min each)'
-        ],
-        'study': [
-            'Gather materials',
-            'Set timer for 15 min',
-            'Read/review first section',
-            'Take quick notes',
-            'Take 5 min break'
-        ],
-        'exercise': [
-            'Put on workout clothes',
-            'Do 5 jumping jacks',
-            'Do 5 min warm-up',
-            'Main workout (10-20 min)',
-            'Cool down stretch'
-        ]
-    },
+    API_KEY: () => window.CONFIG?.GEMINI_API_KEY || '',
+    MODEL: 'gemini-2.5-flash',
+    BASE_URL: 'https://generativelanguage.googleapis.com/v1beta/models',
+
+    currentTask: '',
+    currentSteps: [],
 
     init() {
         this.bindEvents();
@@ -50,10 +18,12 @@ const TaskBreaker = {
     bindEvents() {
         const breakBtn = document.getElementById('btn-break-task');
         const startBtn = document.getElementById('btn-start-first-step');
+        const saveBtn = document.getElementById('btn-save-tasks');
         const input = document.getElementById('big-task-input');
 
         if (breakBtn) breakBtn.addEventListener('click', () => this.breakTask());
         if (startBtn) startBtn.addEventListener('click', () => this.startFirstStep());
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveAllTasks());
 
         if (input) {
             input.addEventListener('keydown', (e) => {
@@ -65,33 +35,81 @@ const TaskBreaker = {
         }
     },
 
-    breakTask() {
+    async breakTask() {
         const input = document.getElementById('big-task-input');
         if (!input || !input.value.trim()) {
             this.showToast('Please enter a task to break down');
             return;
         }
 
-        const task = input.value.toLowerCase();
-        const steps = this.generateSteps(task);
-        this.displaySteps(steps);
+        this.currentTask = input.value.trim();
+
+        // Show loading state
+        const stepsDiv = document.getElementById('micro-steps');
+        const stepsList = document.getElementById('micro-steps-list');
+        if (stepsDiv) stepsDiv.style.display = 'block';
+        if (stepsList) stepsList.innerHTML = '<li class="loading">🤖 AI is breaking down your task...</li>';
+
+        try {
+            const steps = await this.generateAISteps(this.currentTask);
+            this.currentSteps = steps;
+            this.displaySteps(steps);
+        } catch (error) {
+            console.error('AI breakdown error:', error);
+            // Fallback to simple breakdown
+            const steps = this.generateFallbackSteps(this.currentTask);
+            this.currentSteps = steps;
+            this.displaySteps(steps);
+            this.showToast('Using basic breakdown (AI unavailable)');
+        }
     },
 
-    generateSteps(task) {
-        // Check for template matches
-        for (const [key, template] of Object.entries(this.templates)) {
-            if (task.includes(key)) {
-                return template;
-            }
-        }
+    async generateAISteps(task) {
+        const prompt = `You are an ADHD coach helping break down an overwhelming task into tiny, concrete micro-steps.
 
-        // Generic breakdown for unknown tasks
+Task: "${task}"
+
+Break this into 5-8 small, SPECIFIC steps that:
+- Are so small they take 2-10 minutes each
+- Start with an action verb
+- Are concrete and specific (not vague)
+- Include helpful time estimates in parentheses
+
+Return ONLY a JSON array of strings, no other text. Example:
+["Open laptop and create new document (2 min)", "Write the title and your name (1 min)", "List 3 main points to cover (5 min)"]`;
+
+        const response = await fetch(`${this.BASE_URL}/${this.MODEL}:generateContent?key=${this.API_KEY()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 500
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error('API request failed');
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        // Parse JSON from response
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+        throw new Error('Could not parse AI response');
+    },
+
+    generateFallbackSteps(task) {
         return [
             `Gather materials for: ${task}`,
             `Spend 5 min planning approach`,
-            `Start with easiest part`,
-            `Work for 15 min, then break`,
-            `Review progress, continue or stop`
+            `Start with the easiest part`,
+            `Work for 15 min, then take a break`,
+            `Review progress and continue`
         ];
     },
 
@@ -107,9 +125,20 @@ const TaskBreaker = {
             <li class="micro-step" data-index="${i}">
                 <span class="step-check">☐</span>
                 <span class="step-text">${step}</span>
-                <span class="step-time">~5 min</span>
             </li>
         `).join('');
+
+        // Add save button if not exists
+        const actionsDiv = document.querySelector('.task-actions');
+        if (actionsDiv && !document.getElementById('btn-save-tasks')) {
+            const saveBtn = document.createElement('button');
+            saveBtn.id = 'btn-save-tasks';
+            saveBtn.className = 'btn-primary';
+            saveBtn.innerHTML = '💾 Save to My Tasks';
+            saveBtn.style.marginTop = '10px';
+            saveBtn.addEventListener('click', () => this.saveAllTasks());
+            actionsDiv.appendChild(saveBtn);
+        }
 
         // Add click handlers for checking off steps
         stepsList.querySelectorAll('.micro-step').forEach(li => {
@@ -127,25 +156,53 @@ const TaskBreaker = {
             check.textContent = '☑';
             this.showToast('Step done! 🎉');
 
-            // Micro-XP reward
             if (window.XPSystem) {
                 window.XPSystem.addXP(5, 'Task step complete');
             }
         }
     },
 
+    async saveAllTasks() {
+        if (!this.currentSteps.length) {
+            this.showToast('No tasks to save');
+            return;
+        }
+
+        this.showToast('Saving tasks...');
+
+        let saved = 0;
+        for (const step of this.currentSteps) {
+            try {
+                if (window.TaskStore) {
+                    await TaskStore.create(step, `Part of: ${this.currentTask}`, 5);
+                    saved++;
+                }
+            } catch (error) {
+                console.warn('Failed to save task:', step, error);
+            }
+        }
+
+        if (saved > 0) {
+            this.showToast(`✅ Saved ${saved} tasks!`);
+
+            // Also tell the Assistant about these tasks
+            if (window.MemoryStore) {
+                await MemoryStore.save('task', `User created task: ${this.currentTask} with ${saved} micro-steps`, 'manual', 6);
+            }
+        } else {
+            this.showToast('Could not save tasks');
+        }
+    },
+
     startFirstStep() {
-        // Navigate to focus timer with first step context
         const firstStep = document.querySelector('.micro-step:not(.completed) .step-text');
         if (firstStep) {
             this.showToast(`Starting: ${firstStep.textContent}`);
 
-            // Switch to focus timer
             if (window.App && window.App.showSubView) {
                 window.App.showSubView('tools', 'tools-focus');
             }
 
-            // Auto-set 5 min duration
             const durationSelect = document.getElementById('timer-duration');
             if (durationSelect) {
                 durationSelect.value = '5';
@@ -167,5 +224,4 @@ const TaskBreaker = {
     }
 };
 
-// Export
 window.TaskBreaker = TaskBreaker;

@@ -68,6 +68,7 @@ const TaskBreaker = {
         } catch (error) {
             console.error('AI error, using fallback:', error);
             // Use fallback timeline
+            this.showToast('AI failed, using smart templates 🤖');
             const result = this.generateFallbackTimeline(this.currentTask);
             this.currentSteps = result.steps;
             this.timeScale = result.timeScale;
@@ -162,9 +163,14 @@ Return ONLY valid JSON in this exact format:
         ];
 
         let lastError = null;
+        let triedCount = 0;
 
         for (const model of modelsToTry) {
             try {
+                if (triedCount > 0) {
+                    this.showToast(`Retry: Trying ${model.id}... 🤖`);
+                }
+
                 const baseUrl = `https://generativelanguage.googleapis.com/${model.version}/models`;
                 const url = `${baseUrl}/${model.id}:generateContent?key=${apiKey}`;
 
@@ -196,7 +202,13 @@ Return ONLY valid JSON in this exact format:
                 }
             } catch (error) {
                 console.warn(`TaskBreaker model ${model.id} failed:`, error);
+
+                // Show visible warning for each failure
+                const status = error.message.includes('429') ? 'Quota exceeded' : 'Error';
+                this.showToast(`Model ${model.id} failed (${status}). switching... ⚠️`);
+
                 lastError = error;
+                triedCount++;
                 // Continue to next model
             }
         }

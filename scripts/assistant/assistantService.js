@@ -264,7 +264,13 @@ Current date/time: ${new Date().toLocaleString()}`;
      * Call Gemini API
      */
     async callGemini(contents) {
-        const url = `${this.BASE_URL}/${this.MODEL}:generateContent?key=${this.API_KEY}`;
+        const apiKey = this.API_KEY;
+        if (!apiKey) {
+            console.error('No Gemini API key found');
+            return 'I need to be configured with an API key to help you. Please check the setup.';
+        }
+
+        const url = `${this.BASE_URL}/${this.MODEL}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -279,13 +285,19 @@ Current date/time: ${new Date().toLocaleString()}`;
             })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'API request failed');
+            console.error('Gemini API error:', data);
+            throw new Error(data.error?.message || 'API request failed');
         }
 
-        const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+            console.error('No text in response:', data);
+            return 'I received an empty response. Please try again.';
+        }
+        return text;
     },
 
     /**

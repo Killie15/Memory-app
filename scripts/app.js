@@ -97,6 +97,12 @@ const App = {
 
         // AI Assistant
         if (window.Assistant) {
+            // Initialize Google Auth first (for Calendar/Gmail)
+            if (window.GoogleAuth && window.CONFIG?.GOOGLE_CLIENT_ID) {
+                GoogleAuth.init(window.CONFIG.GOOGLE_CLIENT_ID)
+                    .then(() => console.log('Google Auth initialized'))
+                    .catch(err => console.warn('Google Auth failed:', err));
+            }
             Assistant.init();
         }
 
